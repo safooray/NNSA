@@ -4,27 +4,26 @@ function [ dLPLdX ] = dLogPartialLdX( X, Y, C, b )
     [Ysorted, Order] = sort(Y);
     %Censorted = Censored(Order);
     Xsorted = X(Order,:);
+    Csorted = C(Order,:);
     [~, atRiskBegin] = ismember(Ysorted, Ysorted);
+   
+    [m, n] = size(X);
     
-    
-    m = size( X, 1);
-    n = size( X, 2);
-    
-    denom = zeros(m , 1);
-    dLPLdX = repmat(C, 1, n) .* (zeros(m , length(b)) + repmat(b', m , 1)) ;
-    for i = 1:m 
-        denom(i) = sum(exp(Xsorted(atRiskBegin(i):end, :) * b));
-    end
+    dLPLdXSort = repmat(b', m , 1);% .* repmat(-(C - 1), 1, length(b));
+    dLPLdXSort((Csorted == 1), :) = 0;
+    Risk = exp(Xsorted * b);
+    denom = cumsum(Risk, 'reverse');
+    denom = denom(atRiskBegin);
     
     for i = 1:m % iterate to calc derivative wrt to all samples
-        for j = 1:m % the sum in the ll expression
-            if (~C(j) && (Order(j) <= Order(i)))
-                dLPLdX(i, :) = dLPLdX(i, :) - ...
-                 (b' .* exp(X(i, :) * b) ./ denom(j));         
+        for j = 1:m % the sum in the ll expression for each sample
+            if (~Csorted(j) && (Ysorted(j) <= Ysorted(i)))
+                dLPLdXSort(i, :) = dLPLdXSort(i, :) - ...
+                 (Risk(i) .* b') ./ denom(j);         
             end
         end
 %        dLPLdX(i, :) = rehsape(dLPLdX, [1, length(b)]);
     end
-    
+    dLPLdX(Order, :) = dLPLdXSort;
 end
 
