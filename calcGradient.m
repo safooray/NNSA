@@ -27,7 +27,7 @@ function [ nn ] = calcGradient( nn, Y, C, b )
 %     
 %% Last layer
     nn.deltaW{J - 1} = dLogPartialL(Xred, Y, C, b)';
-    
+   
 %% Exact computation of dXX
     dxx = cell(1,m);
     for i = 1:m
@@ -36,12 +36,23 @@ function [ nn ] = calcGradient( nn, Y, C, b )
     
     
 %% Sigmoid layers
+    nn.d_act = cell(size(nn.a));
+    for j = (J - 1):-1:1
+        switch nn.activation_function 
+            case 'sigm'
+                nn.d_act{j} = nn.a{j} .* (1 - nn.a{j});
+            case 'tanh_opt'
+                nn.d_act{j} = 1.7159 * 2/3 * (1 - 1/(1.7159)^2 * nn.a{j}.^2);
+        end
+    end
     for j = (J - 2):-1:1
+
         [P, Q] = size(nn.W{j});
         nn.deltaW{j} = zeros(P, Q);
 %        nn.deltaWapprox{j} = zeros(P, Q);
 %        nn.dXdwapprox{j} = zeros([P, Q, size(Xred)]);
-        for p = P:-1:1    
+        tic;
+        for p = P:-1:1
             for q = Q:-1:1
 %% Numerical calcucation of dXdW
 
@@ -72,5 +83,6 @@ function [ nn ] = calcGradient( nn, Y, C, b )
                 end
             end
         end
+        toc
     end
 end
