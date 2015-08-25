@@ -46,7 +46,7 @@ function [ nn ] = calcGradient( nn, Y, C, b )
         end
     end
     for j = (J - 2):-1:1
-
+        tic;
         [P, Q] = size(nn.W{j});
         nn.deltaW{j} = zeros(P, Q);
 %        nn.deltaWapprox{j} = zeros(P, Q);
@@ -82,5 +82,6 @@ function [ nn ] = calcGradient( nn, Y, C, b )
                 end
             end
         end
+        toc
     end
 end
