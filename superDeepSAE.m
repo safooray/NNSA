@@ -1,8 +1,8 @@
 %clear all;
-prepareData
-StepSize = 1e-3;
-hiddenSize = [10 10 10];
-
+function superDeepSAE (id, Xall, X, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
+    dropoutFraction, inputZeroMaskedFraction, K, testApproach, path)
+X_TRAIN = X;
+X = Xall;
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)
 rng(0, 'v5uniform')
@@ -11,38 +11,35 @@ sae = saesetup([size(X, 2) hiddenSize]);
 for hl = 1:numel(sae.ae)
     sae.ae{hl}.activation_function       = 'sigm';
     sae.ae{hl}.learningRate              = 1;
-    sae.ae{hl}.inputZeroMaskedFraction   = .5;
-%    sae.ae{hl}.dropoutFraction           = .5;
+    sae.ae{hl}.inputZeroMaskedFraction   = inputZeroMaskedFraction;
+    sae.ae{hl}.dropoutFraction           = dropoutFraction;
 end
 
-opts.numepochs = 500;
-opts.batchsize = 191;
+opts.numepochs = 200;
+opts.batchsize = 10;
 sae = saetrain(sae, X, opts);
  
-%% obtain dimension reduced data
-x = X;
-for s = 1 : numel(sae.ae)
-    t = nnff(sae.ae{s}, x, x);
-    x = t.a{2};
-    %remove bias term
-    x = x(:,2:end);
-end
-%X = x;    
-
-%% Use the SDAE to initialize a FFNN  
-nn = mynnsetup([size(x, 2) hiddenSize 1]);
-nn.activation_function              = 'sigm';
-nn.learningRate                     = 1;
-nn.inputZeroMaskedFraction          = 0;
-for hl = 1:nn.n - 2
-    nn.W{hl} = sae.ae{hl}.W{1}';
-end
-
+% nn = mynnsetup([size(x, 2) hiddenSize 1]);
+% nn.activation_function              = 'sigm';
+% nn.learningRate                     = 1;
+% nn.inputZeroMaskedFraction          = 0;
+% for hl = 1:nn.n - 2
+%     nn.W{hl} = sae.ae{hl}.W{1}';
+% end
+% 
+%% obtain dimension reduced data to feed to coxphfit
+    x = X_TRAIN;
+    for s = 1 : numel(sae.ae)
+        t = nnff(sae.ae{s}, x, x);
+        x = t.a{2};
+        %remove bias term
+        x = x(:,2:end);
+    end
 %% initialize cox coefficients
-[b, logl, H, stats] = coxphfit(x, T);
-nn.W{nn.n - 1} = [1;b];
-%% feed forward pass
-nn = mynnff(nn, X, T, C);
+%b = coxphfit(x, T, 'censoring', C);
+% nn.W{nn.n - 1} = [1;b];
+% %% feed forward pass
+% nn = mynnff(nn, X, T, C);
 %% calculate lpl and cindex without fine-tuning on all data
 % Xout = nn.a{nn.n - 1};
 % Xout = Xout(:, 2:end);
@@ -50,15 +47,15 @@ nn = mynnff(nn, X, T, C);
 % cIndex(b, Xout, T, C)
 
 %% back prop with K-fold cross validation
-K = 3;
-m = size(X, 1);
+
+m = size(X_TRAIN, 1);
 F = floor(m / K);
 cursor = 0;
-maxiter = 300;
 lpl_train = zeros(maxiter, 1);
 lpl_test = zeros(maxiter, 1);
 cindex_train = zeros(maxiter, 1);
 cindex_test = zeros(maxiter, 1);
+
 while (cursor < F * K)
     starti = cursor + 1;
     if (m - cursor < K)
@@ -67,23 +64,37 @@ while (cursor < F * K)
         endi = cursor + F;
     end
  
-    x_test = X(starti:endi, :);
+    x_test = X_TRAIN(starti:endi, :);
     y_test = T(starti:endi);
     c_test = C(starti:endi);
 
-    x_train = X([1:starti - 1 endi + 1:m], :);
+    x_train = X_TRAIN([1:starti - 1 endi + 1:m], :);
     y_train = T([1:starti - 1 endi + 1:m]);
     c_train = C([1:starti - 1 endi + 1:m]);
 
+    %% Use the SDAE to initialize a FFNN  
     nn = mynnsetup([size(x_train, 2) hiddenSize 1]);
-    nn.activation_function              = 'sigm';
-    %nn.inputZeroMaskedFraction   = .5;
-    %nn.dropoutFraction           = .5;
-    hl = 1;
+    nn.activation_function       = 'sigm';
+    nn.inputZeroMaskedFraction   = 0;
+    nn.learningRate              = 1;
+    nn.dropoutFraction           = 0;
+
     for hl = 1:nn.n - 2
         nn.W{hl} = sae.ae{hl}.W{1}';
     end
+    
+    x = x_train;
+    for s = 1 : numel(sae.ae)
+        t = nnff(sae.ae{s}, x, x);
+        x = t.a{2};
+        %remove bias term
+        x = x(:,2:end);
+    end
 
+%     %% initialize cox coefficients for last layer weights
+    b = coxphfit(x, y_train, 'censoring', c_train);
+    nn.W{nn.n - 1} = [1;b];
+    
     nn = mynnff(nn, x_train, y_train, c_train);
     Xred_train_bias = nn.a{nn.n - 1};
     Xred_train = Xred_train_bias(:, 2:end);
@@ -94,7 +105,7 @@ while (cursor < F * K)
     %% Train w. bp
     for iter = 1:1:maxiter
             %% change stepsize with iterations
-            StepSize = (1e-3) * ((maxiter) - iter) / maxiter + (5e-5)* iter/maxiter;
+            StepSize = (stepSizeMax) * ((maxiter) - iter) / maxiter + (stepSizeMin)* iter/maxiter;
             if (mod(iter, 10) == 0)
                 StepSize
             end
@@ -121,11 +132,11 @@ while (cursor < F * K)
             lpl_train(iter) = lpl_train(iter) + lpl_train_show;
             cindex_train_show = cIndex(b2, Xred_train, y_train, c_train)
             cindex_train (iter) = cindex_train (iter) + cindex_train_show;
-           
-            %hold on
             
             %% Test
             % apply updated parameters to test data
+            nn_test = nn;
+            nn_test.testing = 1;
             nn_test = mynnff(nn, x_test, y_test, c_test);
             Xred_test = nn_test.a{end - 1};
             Xred_test = Xred_test(:, 2:end);
@@ -136,16 +147,30 @@ while (cursor < F * K)
             lpl_test(iter) = lpl_test(iter) + lpl_test_show;
             iter
     end
-    cursor = cursor + F;
- end
-cindex_test = cindex_test / K;
-cindex_train = cindex_train / K;
-lpl_test = lpl_test / K;
-lpl_train = lpl_train / K;
+    if (testApproach == 0)
+        break;
+    elseif (testApproach == 1)
+        cursor = cursor + F;
+    end
+end
+if (testApproach == 1)
+    cindex_test = cindex_test / K;
+    cindex_train = cindex_train / K;
+    lpl_test = lpl_test / K;
+    lpl_train = lpl_train / K;
+end
 
-plot(1:iter, cindex_train(1: iter));
-plot(1:iter, lpl_train(1: iter));
 
-plot(1:iter, cindex_test(1: iter));
-plot(1:iter, lpl_test(1: iter));
+save(strcat(path, 'sae-', num2str(id), '-lpl-trn', '.mat'), 'lpl_train' );
+save(strcat(path, 'sae-', num2str(id), '-lpl-tst', '.mat'), 'lpl_test' );
+save(strcat(path, 'sae-', num2str(id), '-ci-trn', '.mat'), 'cindex_train' );
+save(strcat(path, 'sae-', num2str(id), '-ci-tst', '.mat'), 'cindex_test' );
+
+% plot(1:iter, cindex_train(1: iter));
+% hold on
+% plot(1:iter, cindex_test(1: iter));
+% figure
+% plot(1:iter, lpl_train(1: iter));
+% figure
+% plot(1:iter, lpl_test(1: iter));
 

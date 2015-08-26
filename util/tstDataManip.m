@@ -42,6 +42,6 @@ X(strcmp(X, 'Yes')) = {double(1)};
 %X(:,21:end) = mat2cell(str2double(X(:, 21:end)), ones(size(X, 1), 1), ones(size(X(:,21:end),2), 1));
 X(:,18:end) = mat2cell(str2double(X(:, 18:end)), ones(size(X, 1), 1), ones(size(X(:,18:end),2), 1));
 X = cell2mat(X);
-Ximputed = knnimpute(X');
-Ximputed_t = Ximputed';
+Ximputed_t = knnimpute(X');
+Ximputed_t = Ximputed_t';
 save('Ximputed_t', 'Ximputed_t');
