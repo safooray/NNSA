@@ -1,7 +1,7 @@
 %clear all;
-function superDeepSAE (id, Xall, X_train_aug, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
-    dropoutFraction, inputZeroMaskedFraction, augment, K, testApproach, path)
-
+function superDeepSAE (id, Xall, X, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
+    dropoutFraction, inputZeroMaskedFraction, K, testApproach, path)
+X_TRAIN = X;
 X = Xall;
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)
@@ -26,7 +26,15 @@ sae = saetrain(sae, X, opts);
 % for hl = 1:nn.n - 2
 %     nn.W{hl} = sae.ae{hl}.W{1}';
 % end
-
+% 
+%% obtain dimension reduced data to feed to coxphfit
+    x = X_TRAIN;
+    for s = 1 : numel(sae.ae)
+        t = nnff(sae.ae{s}, x, x);
+        x = t.a{2};
+        %remove bias term
+        x = x(:,2:end);
+    end
 %% initialize cox coefficients
 %b = coxphfit(x, T, 'censoring', C);
 % nn.W{nn.n - 1} = [1;b];
@@ -39,8 +47,8 @@ sae = saetrain(sae, X, opts);
 % cIndex(b, Xout, T, C)
 
 %% back prop with K-fold cross validation
-X_LABELED = X_train_aug;
-m = size(X_LABELED, 1) / 2;
+
+m = size(X_TRAIN, 1);
 F = floor(m / K);
 cursor = 0;
 lpl_train = zeros(maxiter, 1);
@@ -56,25 +64,14 @@ while (cursor < F * K)
         endi = cursor + F;
     end
  
-    x_test = X_LABELED(starti:endi, :);
+    x_test = X_TRAIN(starti:endi, :);
     y_test = T(starti:endi);
     c_test = C(starti:endi);
 
-    x_train = X_LABELED([1:starti - 1 endi + 1:m], :);
+    x_train = X_TRAIN([1:starti - 1 endi + 1:m], :);
     y_train = T([1:starti - 1 endi + 1:m]);
     c_train = C([1:starti - 1 endi + 1:m]);
 
-    if (augment == 1)
-        x_test = [x_test; X_LABELED(starti + m:endi + m, :)]; 
-        y_test = [y_test; T(starti + m:endi + m)];
-        c_test = [c_test; C(starti + m:endi + m)];
-
-        x_train = [x_train; X_LABELED([1+m:starti-1+m endi+1+m:m+m], :)];
-        y_train = [y_train; T([1+m:starti-1+m endi+1+m:m+m])];
-        c_train = [c_train; C([1+m:starti+m-1 endi+1+m:m+m])];
-        
-    end
-    
     %% Use the SDAE to initialize a FFNN  
     nn = mynnsetup([size(x_train, 2) hiddenSize 1]);
     nn.activation_function       = 'sigm';
@@ -108,13 +105,16 @@ while (cursor < F * K)
     %% Train w. bp
     for iter = 1:1:maxiter
             %% change stepsize with iterations
-            StepSize = (stepSizeMax) * ((maxiter) - iter) / maxiter + (stepSizeMin)* iter/maxiter;
-            if (mod(iter, 10) == 0)
-                StepSize
-            end
+            %StepSize = (stepSizeMax) * ((maxiter) - iter) / maxiter + (stepSizeMin)* iter/maxiter;
+            %if (mod(iter, 10) == 0)
+             %   StepSize
+            %end
             %%  differentiation
             nn = calcGradient(nn, y_train, c_train, b);
             
+	    %conjugate gradient
+
+	    StepSize=Conjugate(Xred_train,y_train,c_train,b(2:end),nn);
             %% gradient checking
             %[diff, grads] = gradCheck(nn, y_train, c_train, b);
             
@@ -176,4 +176,5 @@ save(strcat(path, 'sae-', num2str(id), '-ci-tst', '.mat'), 'cindex_test' );
 % plot(1:iter, lpl_train(1: iter));
 % figure
 % plot(1:iter, lpl_test(1: iter));
+
 
