@@ -1,5 +1,5 @@
 %clear all;
-function superDeepSAE (id, Xall, X_train_aug, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
+function superDeepSAE (id, Xall, X_LABELED, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
     dropoutFraction, inputZeroMaskedFraction, augment, K, testApproach, path)
 
 X = Xall;
@@ -39,7 +39,7 @@ sae = saetrain(sae, X, opts);
 % cIndex(b, Xout, T, C)
 
 %% back prop with K-fold cross validation
-X_LABELED = X_train_aug;
+
 m = size(X_LABELED, 1) / 2;
 F = floor(m / K);
 cursor = 0;
