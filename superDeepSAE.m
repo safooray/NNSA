@@ -40,7 +40,7 @@ sae = saetrain(sae, X, opts);
 
 %% back prop with K-fold cross validation
 
-m = size(X_LABELED, 1) / 2;
+m = size(X_LABELED, 1);
 F = floor(m / K);
 cursor = 0;
 lpl_train = zeros(maxiter, 1);
