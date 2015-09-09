@@ -1,4 +1,4 @@
-function JobGen(pretrain, augment, id, stepSizeMax, stepSizeMin, maxiter, dropoutFraction, inputZeroMaskedFraction, K, testApproach, path )
+function JobGen(pretrain, hSize, augment, id, stepSizeMax, stepSizeMin, maxiter, learningRate, dropoutFraction, inputZeroMaskedFraction, K, testApproach, randLastLayer, randAllLayers, removeBiasInCindex, path )
 
     prepareData;
     if (augment == 0)
@@ -9,17 +9,17 @@ function JobGen(pretrain, augment, id, stepSizeMax, stepSizeMin, maxiter, dropou
     archs = cell(40, 1);
 
     %% initialize archs
-    archs{1} = 20;% .* ones(1, 20);
+    archs{1} = hSize;% .* ones(1, 20);
     for i = 2:size(archs, 1)
-        archs{i} = [archs{i - 1}, 20];
+        archs{i} = [archs{i - 1}, hSize];
     end
-    architecture = archs{id};
+    hiddenSize = archs{id};
     if(pretrain == 1)
-        SrijaSuperDeepSAE(id, Xall, X, T, C, architecture, stepSizeMax, stepSizeMin, ...
-                        maxiter, dropoutFraction, inputZeroMaskedFraction, augment, K, testApproach, path);
-   else
-        superDeepNN(id, Xall, X, T, C, architecture, stepSizeMax, stepSizeMin, ...
-                        maxiter, dropoutFraction, inputZeroMaskedFraction, K, testApproach, path);
+        superDeepSAE (id, Xall, X, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
+                dropoutFraction, inputZeroMaskedFraction, learningRate, augment, K, testApproach, path, randLastLayer, randAllLayers, removeBiasInCindex)
+    else
+        superDeepNN (id, Xall, X, T, C, hiddenSize, stepSizeMax, stepSizeMin, maxiter, ...
+                dropoutFraction, inputZeroMaskedFraction, learningRate, augment, K, testApproach, path, randLastLayer, randAllLayers, removeBiasInCindex)
    end
 end
 
