@@ -1,19 +1,31 @@
 clear all;
 close all;
 
-cd '/home/syouse3/git/survivalnet/survivalnet/NNSA-master/results/0.0001-do0-au0-ae1/'
-archs = [1 2 3 4 5 6 7 8 9 10];
+
+archs = [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20];
+colors = {[51/255 0 0], [102 51 0]./255, [153 153 0]./255, [102 204 0] ./ 255, [51 255 153] ./ 255, [255 0 0] ./ 255, [0 0 204] ./ 255, [255 51 153] ./ 255, [153 51 255] ./ 255, [0 255 0] ./255, ...
+    [255 128 0]./255, [255 255 0]./255, [153 153 0]./255, [128 255 0] ./ 255, [0 255 255] ./ 255, [0 128 255] ./ 255, [128 128 128] ./ 255, [102 0 51] ./ 255, [0 0 0] ./ 255, [0 51 51] ./255};
+%colors = {colors, colors * 2};
+cd '/Users/Ayine/Documents/MATLAB/SurvivalNet/NNSA-master/results/-do0-au1-ae1/'
 measure = '-ci-tst.mat';
-colors = {[51/255 0 0], [102 51 0]./255, [153 153 0]./255, [102 204 0] ./ 255, [51 255 153] ./ 255, [255 0 0] ./ 255, [0 0 204] ./ 255, [255 51 153] ./ 255, [153 51 255] ./ 255, [0 255 0] ./255};
-
-
-for i = 5:9
+for i = 2:20
     load(['sae-' num2str(archs(i)) measure]);
-    hlines(i) = plot(1:300, cindex_test, '--o');
-    set(hlines(i), 'color', colors{i});
+    hlines(i - 1) = plot(1:250, cindex_test, '--.');
+    set(hlines(i - 1), 'color', colors{i});
     hold on
 end
-% l = legend([hlines hlines2], '1-step=1e-4:5e-6', '2', '3', '4', '5', '6', '7', '8', '9','1-step=1e-3:5e-5', '2', '3', '4', '5', '6', '7', '8', '9');
+ l = legend([hlines], '2', '3', '4', '5', '6', '7', '8', '9', ...
+     '10', '11', '12', '13', '14' ,'15', '16', '17', '18', '19', '20');
+% cd '/home/syouse3/git/survivalnet/survivalnet/NNSA-master/results/0.0001-do0-au1-ae1/'
+% measure = '-ci-tst.mat';
+% for i = 1:13
+%     load(['sae-' num2str(archs(i)) measure]);
+%     hlines2(i) = plot(1:600, cindex_test, '--^');
+%     set(hlines2(i), 'color', colors{i});
+%     hold on
+% end
+% 
+
 % l.Location = 'northwest';
 % load('0.0001-do0-au0-ae0/sae-1-ci-tst.mat');
 % hlines(1) = plot(1:300, cindex_test, '-d');
@@ -89,4 +101,4 @@ end
 % hlines(10) = plot(1:300, cindex_test);
 % set(hlines(10), 'color', [153 51 255] ./ 255);
 % 
-legend([hlines], '1', '2', '3', '4', '5', '6', '7', '8', '9', '10');
+%legend([hlines], '1', '2', '3', '4', '5', '6', '7', '8', '9', '10');

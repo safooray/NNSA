@@ -46,7 +46,7 @@ function [ nn ] = calcGradient( nn, Y, C, b )
         end
     end
     for j = (J - 2):-1:1
-        tic;
+      %  tic;
         [P, Q] = size(nn.W{j});
         nn.deltaW{j} = zeros(P, Q);
 %        nn.deltaWapprox{j} = zeros(P, Q);
@@ -54,15 +54,15 @@ function [ nn ] = calcGradient( nn, Y, C, b )
         for p = P:-1:1
             for q = Q:-1:1
 %% Numerical calcucation of dXdW
-
+% 
 %                 nnPlus = nn;
 %                 nnMinus = nn;
 %                 
 %                 nnPlus.W{j}(p , q) = nnPlus.W{j}(p , q) + e;
 %                 nnMinus.W{j}(p , q) = nnMinus.W{j}(p , q) - e;
 %                 
-%                 nnPlus = mynnff(nnPlus, nnPlus.a{1}(:, 2:end), Y, C);
-%                 nnMinus = mynnff(nnMinus, nnMinus.a{1}(:, 2:end), Y, C);
+%                 nnPlus = mynnff(nnPlus, nnPlus.a{1}(:, 2:end) );
+%                 nnMinus = mynnff(nnMinus, nnMinus.a{1}(:, 2:end) );
 %                 
 %                 XredMinus = nnMinus.a{nn.n - 1};
 %                 XredPlus = nnPlus.a{nn.n - 1};
@@ -74,14 +74,14 @@ function [ nn ] = calcGradient( nn, Y, C, b )
                 % for each w, dL/dw, note that L is the result of summation
                 % over Xi
                    tmp = dXW(nn, dxx{i}, i, j, p, q);
-                   %tmp2 = reshape(nn.dXdwapprox{j}(p, q, i, :), 1, n);
-                   %diff = norm(tmp' - tmp2)
+%                    tmp2 = reshape(nn.dXdwapprox{j}(p, q, i, :), 1, n);
+%                    diff = norm(tmp' - tmp2)
                    %nn.deltaWapprox{j}(p, q) = nn.deltaWapprox{j}(p, q) + reshape(nn.dXdwapprox{j}(p, q, i, :), 1, n) * ...
                    %dLdXapprox(i, :)';
                    nn.deltaW{j}(p, q) = nn.deltaW{j}(p, q) + tmp' * dLdX(i, :)';
                 end
             end
         end
-        toc
+     %   toc
     end
 end

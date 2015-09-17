@@ -21,13 +21,13 @@ function [ diff, grads ] = gradCheck(nn, T, C, b)
                 
                 nnPlus = nn;
                 nnPlus.W{l}(p, q) = nnPlus.W{l}(p, q) + e;
-                nnPlus = mynnff(nnPlus, nnPlus.a{1}(:, 2:end), T, C);
+                nnPlus = mynnff(nnPlus, nnPlus.a{1}(:, 2:end));
                 XredPlus = nnPlus.a{L - 1};
                 gradPlus = LogPartialL(XredPlus, T, C, b);
                 
                 nnMinus = nn;
                 nnMinus.W{l}(p, q) = nnMinus.W{l}(p, q) - e;
-                nnMinus = mynnff(nnMinus, nnMinus.a{1}(:, 2:end), T, C);
+                nnMinus = mynnff(nnMinus, nnMinus.a{1}(:, 2:end));
                 XredMinus = nnMinus.a{L - 1};
                 gradMinus = LogPartialL(XredMinus, T, C, b);
                 

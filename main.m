@@ -1,7 +1,8 @@
 clear all;
-prepareData
-StepSize = 1e-3;
+prepareData;
+augmentData;
 
+JobGen(0, 1, 6, 0.000100, 0.000005, 300, 0.000000, 0.000000, 3, 0, '/home/syouse3/git/survivalnet/survivalnet/NNSA-master/results/0.0001-do0-au0-ae1/');
 %X = X(randperm(size(X, 1), :));
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)

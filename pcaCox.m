@@ -5,7 +5,7 @@ iter = 1;
 K = 3;
 
 c = zeros(iter, 1);
-[coeff,Xred] = pca(X, 'NumComponents', 20);
+
 m = size(X, 1);
 F = floor(m / K);
 cursor = 0;
@@ -19,19 +19,22 @@ while (cursor < F * K)
     else
         endi = cursor + F;
     end
-    X_test = Xred(starti:endi, :);
+    
+    X_test = X(starti:endi, :);
     y_test = T(starti:endi);
     c_test = C(starti:endi);
-    X_train = Xred([1:starti - 1 endi + 1:m], :);
+    X_train = X([1:starti - 1 endi + 1:m], :);
     y_train = T([1:starti - 1 endi + 1:m]);
     c_train = C([1:starti - 1 endi + 1:m]);
 
+    [coeff,X_train_red] = pca(X_train, 'NumComponents', 20);
     %% cox coefficients
-    [b2, logl, H, stats] = coxphfit(X_train, y_train);
+    [b2, logl, H, stats] = coxphfit(X_train_red, y_train);
 
-
-    cindex_train  = cindex_train  + cIndex(b2, X_train, y_train, c_train);
-    cindex_test  = cindex_test  + cIndex(b2, X_test, y_test, c_test);
+        
+    X_test_reduced = X_test * coeff;
+    cindex_train  = cindex_train  + cIndex(b2, X_train_red, y_train, c_train);
+    cindex_test  = cindex_test  + cIndex(b2, X_test_reduced, y_test, c_test);
     cursor = cursor + F; 
 %perf = mse(autoenc1, autoenc1(D'), D', 'normalization', 'percent')
 end

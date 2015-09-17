@@ -7,14 +7,14 @@ Prefix = 'Torque.';
 %% TODO: SET EXPERIMENT PARAMETERS
 stepSizeMax = 1e-3;
 stepSizeMin = 5e-4;
-maxiter = 250;
-pretrainV = [1, 0];
+maxiter = 50;
+pretrainV = [1];
 augmentV = [1];
-dropoutFractionV = [0, 0.5];
+dropoutFractionV = [0];
 learningRateV = [1];
 maxLayersInExperiment = 20;
 minLayersInExperiment = 2;
-hSize = 40 ;
+hSize = 120 ;
 jumpLayers = 1;
 inputZeroMaskedFraction = 0;
 K = 3;
@@ -23,8 +23,6 @@ randLastLayerV = [0];
 randAllLayersV = [0];
 removeBiasInCindex = 0;
 
-
-
 for id = minLayersInExperiment:jumpLayers:maxLayersInExperiment
     for pretrain = pretrainV
         for augment = augmentV
@@ -32,7 +30,7 @@ for id = minLayersInExperiment:jumpLayers:maxLayersInExperiment
                 for learningRate = learningRateV
                     for randLastLayer = randLastLayerV
                         for randAllLayers = randAllLayersV
-                            idstr = ['-do' num2str(dropoutFraction) '-au' num2str(augment) '-ae' num2str(pretrain)];
+                            idstr = ['hs' num2str(hSize) '-do' num2str(dropoutFraction) '-au' num2str(augment) '-ae' num2str(pretrain) '-i' num2str(maxiter)];
                             mkdir(['/home/syouse3/git/survivalnet/survivalnet/NNSA-master/results/' idstr]);    
                             path = ['/home/syouse3/git/survivalnet/survivalnet/NNSA-master/results/' idstr '/'];
 

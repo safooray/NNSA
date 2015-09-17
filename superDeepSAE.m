@@ -127,7 +127,7 @@ while (cursor < F * K)
             nn = calcGradient(nn, y_train, c_train, b);
             
             %% gradient checking
-%             [diff, grads] = gradCheck(nn, y_train, c_train, b);
+%            [diff, grads] = gradCheck(nn, y_train, c_train, b);
             
             %% update weights
             for j = 1: nn.n - 1
