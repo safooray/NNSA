@@ -38,50 +38,71 @@ elseif (nargin < 7)
 elseif (nargin < 8)
     rhok = 1e-8;
 end
+    J = nn.n - 1;
     nn = mynnff(nn, X, y_train, c_train);
     x_red = nn.a{nn.n - 1};
     b = nn.W{nn.n - 1};
     
+    dWNorm = norm(cell2mat(nn.deltaW), 2);
     % positive direction (+)alpha
     alpha = alpha_guess;
     
     nn1 = nn;
-    nn2 = nn;
     for j = 1:nn.n
-        nn1.W{j} = alpha .* nn1.deltaW{j};
+        nn1.W{j} = nn1.W{j} + alpha .* nn1.deltaW{j};
     end
     
     nn1 = mynnff(nn1, X, y_train, c_train);
     x_red1 = nn1.a{nn1.n - 1};
     b1 = nn1.W{nn1.n - 1};
     
-    while (LogPartialL(x_red1, T, C, b1) > LogPartialL(x_red, T, C, b) - gamma * alpha ^ 2 * (norm([nn.deltaW{:}])) ^ 2) 
-        if (alpha*norm([nn.deltaW{:}]) < rhok)   
+    L1 = LogPartialL(x_red1, T, C, b1);
+    L = LogPartialL(x_red, T, C, b);
+    while (L1 > L - gamma * alpha ^ 2 * dWNorm ^ 2) 
+        if (alpha * dWNorm < rhok)   
             alpha  = 0;              % <-- failure to search for a value of alpha nonzero
         else
             alpha = alpha*delta;     % <-- reduction of the steplength
         end
+        for j = 1:nn.n
+            nn1.W{j} = nn1.W{j} + alpha .* nn1.deltaW{j};
+        end
+    
+        nn1 = mynnff(nn1, X, y_train, c_train);
+        x_red1 = nn1.a{nn1.n - 1};
+        b1 = nn1.W{nn1.n - 1};
+
+        L1 = LogPartialL(x_red1, T, C, b1);
     end 
     alpha1 = alpha;
     
-    
-    
-    F1     = F(nn.W+alpha1.*nn.deltaW)-(F(nn.W)-gamma*alpha1^2*(norm(nn.deltaW))^2);
+    F1 = L1 - (L - gamma * alpha1 ^ 2 * (dWNorm ^ 2);
     
     % negative direction (-)alpha
     alpha = alpha_guess;
-    while (F(nn.W-alpha.*nn.deltaW)>F(nn.W)-gamma*alpha^2*(norm(nn.deltaW))^2)  
-        if (alpha*norm(nn.deltaW) < rhok)
-            alpha   = 0;              % <-- failure to search for a value of alpha nonzero
+    
+    for j = 1:nn.n
+        nn1.W{j} = nn1.W{j} - alpha .* nn1.deltaW{j};
+    end
+    
+    nn1 = mynnff(nn1, X, y_train, c_train);
+    x_red1 = nn1.a{nn1.n - 1};
+    b1 = nn1.W{nn1.n - 1};
+    
+    L1 = LogPartialL(x_red1, T, C, b1);
+    L = LogPartialL(x_red, T, C, b);
+    while (L1 > L - gamma * alpha ^ 2 * (dWNorm ^ 2))  
+        if (alpha * dWNorm < rhok)
+            alpha = 0;              % <-- failure to search for a value of alpha nonzero
         else
-            alpha = alpha*delta;      % <-- reduction of the steplength
+            alpha = alpha * delta;      % <-- reduction of the steplength
         end
     end
     alpha2 = -alpha;
-    F2     = F(nn.W+alpha2.*nn.deltaW)-(F(nn.W)-gamma*alpha2^2*(norm(nn.deltaW))^2);
+    F2     = L1 - (L - gamma * alpha2 ^ 2 * (dWNorm ^ 2);
 
     % choice of the value of alpha for which it is provided with sufficient reduction 
-    if (F1<F2)           
+    if (F1 < F2)           
         alpha = alpha1;
     else
         alpha = alpha2;

@@ -1,12 +1,12 @@
-function deltax = conjugate(X, T, C, deltax, maxiter, alpha_guess, nn)
+function nn = conjugate(X, T, C, maxiter, alpha_guess, nn)
     %objFunc  = LogPartialL(nn.a{end - 1}, Y, Censored, Beta, nn.W{end - 1});
     lpl_train = zeros(maxiter, 1);
     lpl_test = zeros(maxiter, 1);
     cindex_train = zeros(maxiter, 1);
     cindex_test = zeros(maxiter, 1);
     for j = 1 : nn.n - 1
-        alpha = backtrack(alpha_guess, nn.W{j}, nn.deltaW{j}, LogPartialL, X, T, C, nn);
-        nn.W{j}= nn.W{j} + alpha * nn.deltaW{j};
+        alpha = backtrack(alpha_guess, LogPartialL, X, T, C, nn);
+        nn.W{j} = nn.W{j} + alpha * nn.deltaW{j};
     end
     for i = 1:maxiter
         dW_pre = nn.deltaW{j}; % previous steepest direction
@@ -14,7 +14,7 @@ function deltax = conjugate(X, T, C, deltax, maxiter, alpha_guess, nn)
         beta = (nn.deltaW{j}' * nn.deltaW{j}) / (dW_pre' * dW_pre);
         for j = 1 : nn.n - 1
             nn.deltaW{j} = nn.deltaW{j} + beta * nn.deltaW{j};
-            alpha = backtrack(alpha_guess, nn.W{j}, nn.deltaW{j}, quad);
+            alpha = backtrack(alpha_guess, X, T, C, nn);
             nn.W{j} = nn.W{j} + alpha * nn.deltaW{j};
         end
         %% get performance with updated weights
